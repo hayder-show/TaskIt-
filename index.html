@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskIt!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: #2c3e50;
+            color: #ecf0f1;
+            line-height: 1.6;
+            text-align: right;
+            padding: 20px;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #34495e;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ecf0f1;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .site-info {
+            background-color: #1abc9c;
+            color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        form {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 8px rgba(52, 152, 219, 0.5);
+            outline: none;
+        }
+
+        button {
+            padding: 12px 24px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        li:last-child {
+            border-bottom: none;
+        }
+
+        li:hover {
+            background-color: #3498db;
+            transform: translateX(-5px);
+            color: #fff;
+        }
+
+        li button {
+            background-color: #e74c3c;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        li button:hover {
+            background-color: #c0392b;
+            transform: scale(1.1);
+        }
+
+        footer {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 14px;
+            color: #ecf0f1;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            form {
+                flex-direction: column;
+            }
+
+            input[type="text"] {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>!TaskIt 📝</h1>
+        <div class="site-info">
+            مرحبًا بك في !TaskIt. يمكنك إضافة مهام جديدة، وتعديلها أو حذفها بسهولة. "جميع المهام تحفظ تلقائيًا حتى بعد إغلاق المتصفح".
+        </div>
+        <form id="task-form">
+            <input type="text" id="task-input" placeholder="أضف مهمة جديدة..." required>
+            <button type="submit">إضافة</button>
+        </form>
+        <ul id="task-list"></ul>
+    </div>
+
+    <footer>
+        Dev By Hayder-Show
+    </footer>
+
+    <script>
+        function getCurrentDate() {
+            const today = new Date();
+            const day = today.getDate().toString().padStart(2, '0');
+            const month = (today.getMonth() + 1).toString().padStart(2, '0');
+            const year = today.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+
+        const taskForm = document.getElementById('task-form');
+        const taskInput = document.getElementById('task-input');
+        const taskList = document.getElementById('task-list');
+
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        tasks.forEach(task => addTaskToDOM(task.text, task.date, task.id));
+
+        taskForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const taskText = taskInput.value.trim();
+
+            if (taskText !== '') {
+                const taskDate = getCurrentDate();
+                const taskId = Date.now();
+
+                addTaskToDOM(taskText, taskDate, taskId);
+                saveTaskToLocalStorage(taskText, taskDate, taskId);
+                taskInput.value = '';
+            }
+        });
+
+        function addTaskToDOM(taskText, taskDate, taskId) {
+            const li = document.createElement('li');
+            const taskTextSpan = document.createElement('span');
+            taskTextSpan.classList.add('task-text');
+            taskTextSpan.textContent = taskText;
+
+            const taskDateSpan = document.createElement('span');
+            taskDateSpan.classList.add('task-date');
+            taskDateSpan.textContent = `تاريخ: ${taskDate}`;
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'حذف';
+            deleteButton.addEventListener('click', function () {
+                li.remove();
+                removeTaskFromLocalStorage(taskId);
+            });
+
+            li.appendChild(taskTextSpan);
+            li.appendChild(taskDateSpan);
+            li.appendChild(deleteButton);
+            taskList.appendChild(li);
+        }
+
+        function saveTaskToLocalStorage(taskText, taskDate, taskId) {
+            const task = { text: taskText, date: taskDate, id: taskId };
+            tasks.push(task);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function removeTaskFromLocalStorage(taskId) {
+            tasks = tasks.filter(task => task.id !== taskId);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+    </script>
+</body>
+</html>
